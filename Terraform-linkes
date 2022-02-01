@@ -14,3 +14,9 @@ https://jhooq.com/terraform-workspaces/
 
 https://www.youtube.com/watch?v=oB7l8GOpVaY
 https://jhooq.com/terraform-variable-and-tfvars-file/
+
+===========Terraform-Deployment-through-Codepipeline===
+
+Intro to AWS CodeCommit, CodePipeline, and CodeBuild with Terraform
+https://medium.com/swlh/intro-to-aws-codecommit-codepipeline-and-codebuild-with-terraform-179f4310fe07
+
