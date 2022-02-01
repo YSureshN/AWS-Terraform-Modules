@@ -20,3 +20,7 @@ https://jhooq.com/terraform-variable-and-tfvars-file/
 Intro to AWS CodeCommit, CodePipeline, and CodeBuild with Terraform
 https://medium.com/swlh/intro-to-aws-codecommit-codepipeline-and-codebuild-with-terraform-179f4310fe07
 
+=============Code-Build-Project-Environts-in-Buildspec-file=======
+
+https://blog.shikisoft.com/define-environment-vars-aws-codebuild-buildspec/
+
