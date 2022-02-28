@@ -1,4 +1,9 @@
 #https://levelup.gitconnected.com/create-pipeline-to-push-docker-image-to-ecr-deploy-containerised-app-to-elastic-beanstalk-e721af796f33
+#https://www.maestralsolutions.com/create-git-tags-in-the-form-of-semantic-build-numbers-using-aws-codebuild-and-aws-codepipeline/
+#https://github.com/aws-samples/kubernetes-for-java-developers/blob/master/buildspec.yml
+#https://github.com/felixyu9/github-to-lambda-demo/blob/main/buildspec.yml
+#https://github.com/indralab/indra_docker/blob/master/buildspec.yml
+#https://github.com/glenrobson/SimpleAnnotationServer/blob/master/buildspec.yml
 
 version: 0.2
 phases:
