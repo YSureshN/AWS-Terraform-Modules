@@ -1,0 +1,70 @@
+# https://aws.amazon.com/blogs/devops/continuously-building-and-delivering-maven-artifacts-to-aws-codeartifact/
+
+telematics.geofence-apicodebuild-maven-settings.xml
+Info
+
+<settings>
+    <servers>
+        <server>
+            <id>telematics-domain-telematics-core-repository</id>
+            <username>aws</username>
+            <password>${env.CODEARTIFACT_AUTH_TOKEN}</password>
+        </server>
+    </servers>
+</settings>
+
+
+version: 0.2
+env:
+  secrets-manager:
+    sonar_username: "SonarQubeUserSecret-4A0b7f6V9LNs:username"
+    sonar_password: "SonarQubeUserSecret-4A0b7f6V9LNs:password"
+    fortify_SSC_CIToken: "telematics/fortifyssc:CIToken"
+  variables:
+      repo_name: "telematics.geofence-api"
+      fortify_app_version_id: "7"
+phases:
+  pre_build:
+    commands: 
+      - echo Scanning through Fortify....
+      - bash -x fortify_sast_local_java_template.bash
+      - echo Loggin in to Amazon ECR...
+      - aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 567234402044.dkr.ecr.us-east-1.amazonaws.com
+      - TAG="1-0-SNAPSHOT-$CODEBUILD_BUILD_NUMBER-$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)"
+      - IMAGE_TAG=${TAG:=latest}
+      - echo sonarqube pre_build_steps
+      - sonar_host_url="https://sonarqube.hercrentals.com"
+
+  build:
+    commands: 
+      - echo Build started on `date`
+      - echo Build docker image
+      - mvn clean -e
+      - export CODEARTIFACT_AUTH_TOKEN=`aws codeartifact get-authorization-token --domain telematics-domain --domain-owner 567234402044 --query authorizationToken --output text` 
+      - echo $CODEARTIFACT_AUTH_TOKEN
+      #- mvn install sonar:sonar -Dsonar.projectKey=$repo_name -Dsonar.host.url=$sonar_host_url -Dsonar.login=$sonar_username -Dsonar.password=$sonar_password -Dsonar.scm.disabled=true
+      - mvn -s codebuild-maven-settings.xml install sonar:sonar -Dsonar.projectKey=$repo_name -Dsonar.host.url=$sonar_host_url -Dsonar.login=$sonar_username -Dsonar.password=$sonar_password -Dsonar.scm.disabled=true
+      - docker build -t $REPOSITORY_URI:latest .
+      - echo tag docker image
+      - docker tag "${REPOSITORY_URI}:latest" "${REPOSITORY_URI}:${IMAGE_TAG}"
+  
+  post_build:
+    commands: 
+      - echo Build completed on `date`
+      - echo Pushing the Docker image....
+      - docker push $REPOSITORY_URI:latest
+      - docker push "${REPOSITORY_URI}:${IMAGE_TAG}"
+      - export AWS_ACCESS_KEY_ID="$(echo ${CREDENTIALS} | jq -r '.Credentials.AccessKeyId')"
+      - export AWS_SECRET_ACCESS_KEY="$(echo ${CREDENTIALS} | jq -r '.Credentials.SecretAccessKey')"
+      - export AWS_SESSION_TOKEN="$(echo ${CREDENTIALS} | jq -r '.Credentials.SessionToken')"
+      - export AWS_EXPIRATION=$(echo ${CREDENTIALS} | jq -r '.Credentials.Expiration')
+      - aws eks update-kubeconfig --name $EKS_CLUSTER_NAME
+      - echo Delete existing deployment instance...
+      - kubectl delete -n default deployment dev-web-dep-geofenceapi
+      - kubectl apply -f manifest.yaml
+      - printf '[{"name":"%s","imageUri":"%s"}]' $IMAGE_REPO_NAME $REPO_URI:$IMAGE_TAG > imagedefinitions.json 
+      - cat imagedefinitions.json 
+      
+artifacts:
+    files: imagedefinitions.json
+    
